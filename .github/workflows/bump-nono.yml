@@ -114,6 +114,10 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         run: |
           NONO_SHA=$(git ls-remote https://github.com/always-further/nono.git "refs/tags/${NONO_VERSION}" | cut -f1)
+          if [ -z "$NONO_SHA" ]; then
+            echo "Error: Could not resolve SHA for tag ${NONO_VERSION}"
+            exit 1
+          fi
 
           for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
             cp "artifacts/libnono-${platform}/libnono_ffi.a" "internal/clib/${platform}/libnono_ffi.a"
