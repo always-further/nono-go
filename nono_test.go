@@ -1033,6 +1033,9 @@ func runApplySandboxChild(t *testing.T) {
 	if err := caps.AllowFile(allowedFile, nono.AccessRead); err != nil {
 		t.Fatalf("AllowFile allowed path: %v", err)
 	}
+	if _, err := os.ReadFile(deniedFile); err != nil {
+		t.Fatalf("ReadFile denied path before Apply: %v", err)
+	}
 	if err := nono.Apply(caps); err != nil {
 		if os.Getenv("NONO_REQUIRE_APPLY") != "1" {
 			t.Skipf("sandbox apply skipped: %v", err)
@@ -1049,6 +1052,8 @@ func runApplySandboxChild(t *testing.T) {
 	}
 	if _, err := os.ReadFile(deniedFile); err == nil {
 		t.Fatal("ReadFile denied path after Apply: expected error, got nil")
+	} else if !errors.Is(err, os.ErrPermission) {
+		t.Fatalf("ReadFile denied path after Apply: expected permission error, got %v", err)
 	}
 	t.Log("sandbox enforcement verified")
 }
