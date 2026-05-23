@@ -94,13 +94,20 @@ jobs:
             cargo build --release --target ${{ matrix.target }} -p nono-ffi
           fi
 
+      - name: Stage library artifact
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          mkdir -p "artifact/$PLATFORM"
+          cp "/tmp/nono/target/$TARGET/release/libnono_ffi.a" "artifact/$PLATFORM/libnono_ffi.a"
+          cp /tmp/nono/bindings/c/include/nono.h "artifact/$PLATFORM/nono.h"
+
       - name: Upload library artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: libnono-${{ matrix.platform }}
-          path: |
-            /tmp/nono/target/${{ matrix.target }}/release/libnono_ffi.a
-            /tmp/nono/bindings/c/include/nono.h
+          path: artifact/${{ matrix.platform }}/*
 
   create-pr:
     name: Create bump PR
