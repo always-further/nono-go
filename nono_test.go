@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -854,7 +855,7 @@ func TestCapabilitySetConcurrent(t *testing.T) {
 			go func() {
 				defer wg.Done()
 				started <- struct{}{} // signal that a reader has started
-				runtime.Gosched()    // yield to increase likelihood that Close races with reads
+				runtime.Gosched()     // yield to increase likelihood that Close races with reads
 				_ = cs.NetworkMode()
 				_ = cs.IsNetworkBlocked()
 				_ = cs.ProxyPort()
@@ -965,6 +966,96 @@ func TestApplyNilAndClosed(t *testing.T) {
 			t.Error("Apply(closed): expected error, got nil")
 		}
 	})
+}
+
+// TestApplySandboxSubprocess verifies the irreversible sandbox path in a child
+// process so the parent test process remains unrestricted.
+func TestApplySandboxSubprocess(t *testing.T) {
+	if os.Getenv("NONO_SKIP_APPLY_SANDBOX_TEST") == "1" {
+		t.Skip("sandbox apply test disabled for this run")
+	}
+	if os.Getenv("NONO_APPLY_SANDBOX_CHILD") == "1" {
+		runApplySandboxChild(t)
+		return
+	}
+
+	t.Parallel()
+	if !nono.IsSupported() {
+		t.Skip("sandboxing is not supported on this platform")
+	}
+
+	dir := t.TempDir()
+	allowedDir := filepath.Join(dir, "allowed")
+	deniedDir := filepath.Join(dir, "denied")
+	if err := os.Mkdir(allowedDir, 0o755); err != nil {
+		t.Fatalf("Mkdir allowed dir: %v", err)
+	}
+	if err := os.Mkdir(deniedDir, 0o755); err != nil {
+		t.Fatalf("Mkdir denied dir: %v", err)
+	}
+
+	allowedFile := filepath.Join(allowedDir, "allowed.txt")
+	deniedFile := filepath.Join(deniedDir, "denied.txt")
+	if err := os.WriteFile(allowedFile, []byte("allowed"), 0o644); err != nil {
+		t.Fatalf("WriteFile allowed: %v", err)
+	}
+	if err := os.WriteFile(deniedFile, []byte("denied"), 0o644); err != nil {
+		t.Fatalf("WriteFile denied: %v", err)
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestApplySandboxSubprocess$", "-test.v")
+	cmd.Env = append(os.Environ(),
+		"NONO_APPLY_SANDBOX_CHILD=1",
+		"NONO_ALLOWED_FILE="+allowedFile,
+		"NONO_DENIED_FILE="+deniedFile,
+	)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("sandbox child failed: %v\n%s", err, output)
+	}
+	if strings.Contains(string(output), "sandbox apply skipped") {
+		t.Skipf("sandbox child skipped:\n%s", output)
+	}
+	if !strings.Contains(string(output), "sandbox enforcement verified") {
+		t.Fatalf("sandbox child did not report verification:\n%s", output)
+	}
+}
+
+func runApplySandboxChild(t *testing.T) {
+	t.Helper()
+	allowedFile := os.Getenv("NONO_ALLOWED_FILE")
+	deniedFile := os.Getenv("NONO_DENIED_FILE")
+	if allowedFile == "" || deniedFile == "" {
+		t.Fatal("missing child sandbox paths")
+	}
+
+	caps := nono.New()
+	if err := caps.AllowFile(allowedFile, nono.AccessRead); err != nil {
+		t.Fatalf("AllowFile allowed path: %v", err)
+	}
+	if _, err := os.ReadFile(deniedFile); err != nil {
+		t.Fatalf("ReadFile denied path before Apply: %v", err)
+	}
+	if err := nono.Apply(caps); err != nil {
+		if os.Getenv("NONO_REQUIRE_APPLY") != "1" {
+			t.Skipf("sandbox apply skipped: %v", err)
+		}
+		t.Fatalf("Apply: %v", err)
+	}
+
+	got, err := os.ReadFile(allowedFile)
+	if err != nil {
+		t.Fatalf("ReadFile allowed path after Apply: %v", err)
+	}
+	if string(got) != "allowed" {
+		t.Fatalf("ReadFile allowed path = %q, want allowed", got)
+	}
+	if _, err := os.ReadFile(deniedFile); err == nil {
+		t.Fatal("ReadFile denied path after Apply: expected error, got nil")
+	} else if !errors.Is(err, os.ErrPermission) {
+		t.Fatalf("ReadFile denied path after Apply: expected permission error, got %v", err)
+	}
+	t.Log("sandbox enforcement verified")
 }
 
 // TestIsSupportedTrue verifies IsSupported() returns true on supported platforms.
