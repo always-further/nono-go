@@ -1,6 +1,6 @@
 # nono-go
 
-[![CI](https://github.com/kipz/nono-go/actions/workflows/ci.yml/badge.svg)](https://github.com/kipz/nono-go/actions/workflows/ci.yml)
+[![CI](https://github.com/always-further/nono-go/actions/workflows/ci.yml/badge.svg)](https://github.com/always-further/nono-go/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/always-further/nono-go.svg)](https://pkg.go.dev/github.com/always-further/nono-go)
 
 Go CGo bindings for the [nono](https://github.com/always-further/nono) capability-based security sandbox.
@@ -46,9 +46,8 @@ The bundled libraries are built from the upstream [nono](https://github.com/alwa
 ## Testing
 
 ```sh
-go test -v ./...
-go vet ./...
-staticcheck ./...   # go install honnef.co/go/tools/cmd/staticcheck@latest
+make ci          # local hygiene, tests, coverage, race tests, staticcheck
+make test-apply  # require the irreversible Apply subprocess test to pass
 ```
 
 ## Usage
@@ -126,7 +125,7 @@ if err != nil {
 }
 defer state.Close()
 
-jsonStr, err := state.ToJSON()
+jsonStr, err := state.JSON()
 if err != nil {
     log.Fatal(err)
 }
@@ -138,7 +137,7 @@ if err != nil {
 }
 defer restored.Close()
 
-caps2, err := restored.ToCaps()
+caps2, err := restored.Caps()
 if err != nil {
     log.Fatal(err)
 }
@@ -147,16 +146,16 @@ defer caps2.Close()
 
 ## Error handling
 
-All failing operations return `*nono.Error`. Use `errors.Is` with a sentinel accessor to test for specific failure kinds:
+All failing operations return `*nono.Error`. Use `errors.Is` with a sentinel error to test for specific failure kinds:
 
 ```go
 err := caps.AllowPath("/nonexistent", nono.AccessRead)
-if errors.Is(err, nono.ErrPathNotFound()) {
+if errors.Is(err, nono.ErrPathNotFound) {
     // path does not exist
 }
 ```
 
-Named sentinel accessors (each is a function — note the `()`): `ErrPathNotFound()`, `ErrExpectedDirectory()`, `ErrExpectedFile()`, `ErrPathCanonicalization()`, `ErrNoCapabilities()`, `ErrSandboxInit()`, `ErrUnsupportedPlatform()`, `ErrBlockedCommand()`, `ErrConfigParse()`, `ErrProfileParse()`, `ErrIO()`, `ErrInvalidArg()`, `ErrTrustVerification()`, `ErrUnknown()`.
+Named sentinel errors: `ErrPathNotFound`, `ErrExpectedDirectory`, `ErrExpectedFile`, `ErrPathCanonicalization`, `ErrNoCapabilities`, `ErrSandboxInit`, `ErrUnsupportedPlatform`, `ErrBlockedCommand`, `ErrConfigParse`, `ErrProfileParse`, `ErrIO`, `ErrInvalidArg`, `ErrTrustVerification`, `ErrUnknown`.
 
 ## macOS path canonicalization
 
