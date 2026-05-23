@@ -11,13 +11,18 @@ on:
         type: string
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: bump-nono-${{ github.event.client_payload.nono_version || github.event.inputs.nono_version }}
+  cancel-in-progress: false
 
 jobs:
   rebuild-libs:
     name: Rebuild nono-ffi for ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     env:
       NONO_VERSION: ${{ github.event.client_payload.nono_version || github.event.inputs.nono_version }}
     strategy:
@@ -42,6 +47,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Validate nono version
+        run: |
+          if ! echo "$NONO_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid nono version: $NONO_VERSION" >&2
+            exit 1
+          fi
+
       - name: Clone nono at release tag
         run: |
           git clone --depth 1 --branch "$NONO_VERSION" \
@@ -52,13 +64,26 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Cache Cargo
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ~/.cargo/bin/cross
+          key: cargo-${{ runner.os }}-${{ matrix.target }}-${{ env.NONO_VERSION }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ matrix.target }}-
+            cargo-${{ runner.os }}-
+
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux' && !matrix.cross
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
 
       - name: Install cross (Linux ARM64)
         if: matrix.cross
-        run: cargo install cross
+        run: command -v cross || cargo install cross
 
       - name: Build libnono_ffi.a
         run: |
@@ -81,6 +106,9 @@ jobs:
     name: Create bump PR
     needs: rebuild-libs
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     env:
       NONO_VERSION: ${{ github.event.client_payload.nono_version || github.event.inputs.nono_version }}
     steps:
@@ -88,9 +116,18 @@ jobs:
         with:
           persist-credentials: false
 
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.24'
+          cache: true
+
       - name: Strip v prefix
         id: version
         run: |
+          if ! echo "$NONO_VERSION" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid nono version: $NONO_VERSION" >&2
+            exit 1
+          fi
           VERSION="${NONO_VERSION#v}"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "branch=bump-nono-${VERSION}" >> "$GITHUB_OUTPUT"
@@ -114,22 +151,59 @@ jobs:
         with:
           path: artifacts
 
+      - name: Validate library artifacts
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+            test -s "artifacts/libnono-${platform}/libnono_ffi.a"
+            test -s "artifacts/libnono-${platform}/nono.h"
+          done
+
+          for platform in darwin_amd64 linux_amd64 linux_arm64; do
+            cmp -s "artifacts/libnono-darwin_arm64/nono.h" \
+              "artifacts/libnono-${platform}/nono.h"
+          done
+
       - name: Update bundled libraries
         if: steps.check.outputs.skip != 'true'
         run: |
-          NONO_SHA=$(git ls-remote https://github.com/always-further/nono.git "refs/tags/${NONO_VERSION}" | cut -f1)
-          if [ -z "$NONO_SHA" ]; then
+          git init /tmp/nono-tag
+          git -C /tmp/nono-tag remote add origin https://github.com/always-further/nono.git
+          git -C /tmp/nono-tag fetch --depth=1 origin \
+            "refs/tags/${NONO_VERSION}:refs/tags/${NONO_VERSION}"
+          NONO_SHA=$(git -C /tmp/nono-tag rev-list -n 1 "$NONO_VERSION")
+          if ! echo "$NONO_SHA" | grep -Eq '^[0-9a-f]{40}$'; then
             echo "Error: Could not resolve SHA for tag ${NONO_VERSION}"
             exit 1
           fi
 
-          for platform in darwin_amd64 darwin_arm64 linux_amd64 linux_arm64; do
+          for entry in \
+            "darwin_amd64 x86_64-apple-darwin" \
+            "darwin_arm64 aarch64-apple-darwin" \
+            "linux_amd64 x86_64-unknown-linux-gnu" \
+            "linux_arm64 aarch64-unknown-linux-gnu"; do
+            set -- $entry
+            platform="$1"
+            target="$2"
             cp "artifacts/libnono-${platform}/libnono_ffi.a" "internal/clib/${platform}/libnono_ffi.a"
-            echo "$NONO_SHA" > "internal/clib/${platform}/VERSION"
+            {
+              echo "# nono upstream commit used to build libnono_ffi.a for $target"
+              echo "# Update this file whenever the bundled library is rebuilt."
+              echo "$NONO_SHA"
+            } > "internal/clib/${platform}/VERSION"
           done
 
           # Update shared header
           cp artifacts/libnono-darwin_arm64/nono.h internal/clib/nono.h
+
+      - name: Validate updated Go package
+        if: steps.check.outputs.skip != 'true'
+        env:
+          NONO_REQUIRE_APPLY: "1"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libdbus-1-dev pkg-config
+          go test -v -count=1 ./...
 
       - name: Create Pull Request
         if: steps.check.outputs.skip != 'true'
