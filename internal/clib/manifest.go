@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -72,9 +71,9 @@ func main() {
 	if err != nil {
 		fatal(err)
 	}
-	if !equalManifest(want, got) {
+	if err := diffManifest(want, got); err != nil {
 		fmt.Fprintln(os.Stderr, "internal/clib/MANIFEST.json is out of date; run `go run internal/clib/manifest.go -write`")
-		fatal(diffManifest(want, got))
+		fatal(err)
 	}
 }
 
@@ -197,39 +196,30 @@ func writeManifest(path string, m manifest) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-func equalManifest(a, b manifest) bool {
-	aj, err := json.Marshal(a)
-	if err != nil {
-		return false
-	}
-	bj, err := json.Marshal(b)
-	if err != nil {
-		return false
-	}
-	return string(aj) == string(bj)
-}
-
 func diffManifest(want, got manifest) error {
-	if want.Header != got.Header {
-		return fmt.Errorf("header mismatch: manifest has %s, current is %s", want.Header.SHA256, got.Header.SHA256)
+	if want.Schema != got.Schema {
+		return fmt.Errorf("schema mismatch: manifest has %d, current is %d", want.Schema, got.Schema)
 	}
-	for i := range want.Libs {
-		if i >= len(got.Libs) || want.Libs[i] != got.Libs[i] {
-			return fmt.Errorf("library mismatch at index %d", i)
-		}
+	if want.Header != got.Header {
+		return fmt.Errorf("header mismatch: manifest has %+v, current is %+v", want.Header, got.Header)
 	}
 	if len(want.Libs) != len(got.Libs) {
 		return fmt.Errorf("library count mismatch: manifest has %d, current is %d", len(want.Libs), len(got.Libs))
 	}
-	for i := range want.Versions {
-		if i >= len(got.Versions) || want.Versions[i] != got.Versions[i] {
-			return fmt.Errorf("version mismatch at index %d", i)
+	for i := range want.Libs {
+		if want.Libs[i] != got.Libs[i] {
+			return fmt.Errorf("library mismatch at index %d: manifest has %+v, current is %+v", i, want.Libs[i], got.Libs[i])
 		}
 	}
 	if len(want.Versions) != len(got.Versions) {
 		return fmt.Errorf("version count mismatch: manifest has %d, current is %d", len(want.Versions), len(got.Versions))
 	}
-	return errors.New("manifest mismatch")
+	for i := range want.Versions {
+		if want.Versions[i] != got.Versions[i] {
+			return fmt.Errorf("version mismatch at index %d: manifest has %+v, current is %+v", i, want.Versions[i], got.Versions[i])
+		}
+	}
+	return nil
 }
 
 func fatal(err error) {
