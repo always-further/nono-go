@@ -2,9 +2,9 @@ GO ?= go
 STATICCHECK ?= staticcheck
 COVERPROFILE ?= coverage.out
 
-.PHONY: ci coverage fmt fmt-check lint race test test-apply tidy-check verify vet
+.PHONY: ci clib-manifest clib-manifest-update coverage fmt fmt-check lint race test test-apply tidy-check verify vet
 
-ci: fmt-check tidy-check verify vet test coverage race lint
+ci: fmt-check tidy-check verify clib-manifest vet test coverage race lint
 
 fmt:
 	gofmt -w .
@@ -21,6 +21,12 @@ tidy-check:
 
 verify:
 	$(GO) mod verify
+
+clib-manifest:
+	$(GO) run internal/clib/manifest.go
+
+clib-manifest-update:
+	$(GO) run internal/clib/manifest.go -write
 
 vet:
 	$(GO) vet ./...

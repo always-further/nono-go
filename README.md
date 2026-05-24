@@ -43,6 +43,10 @@ The bundled libraries are built from the upstream [nono](https://github.com/alwa
 ./scripts/build-libs.sh --nono-src /path/to/nono
 ```
 
+Bundled library provenance is recorded in `internal/clib/MANIFEST.json`.
+After rebuilding libraries locally, run `make clib-manifest-update`; CI verifies
+the manifest with `make clib-manifest`.
+
 ## Testing
 
 ```sh

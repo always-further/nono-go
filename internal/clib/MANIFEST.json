@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "header": {
+    "path": "internal/clib/nono.h",
+    "sha256": "02a9d58f852ae2aaabcbe65879b75abaf584fb70411281a1c12deb938e541951"
+  },
+  "libs": [
+    {
+      "platform": "darwin_amd64",
+      "target": "x86_64-apple-darwin",
+      "path": "internal/clib/darwin_amd64/libnono_ffi.a",
+      "sha256": "ba7c0895370c89c466d5493a1f083868fdf5775506a11d754af23120929cbf24"
+    },
+    {
+      "platform": "darwin_arm64",
+      "target": "aarch64-apple-darwin",
+      "path": "internal/clib/darwin_arm64/libnono_ffi.a",
+      "sha256": "9798b2d7b51b4947a531d642d7f798a99115d21d53237fdf5f7dc9f027049060"
+    },
+    {
+      "platform": "linux_amd64",
+      "target": "x86_64-unknown-linux-gnu",
+      "path": "internal/clib/linux_amd64/libnono_ffi.a",
+      "sha256": "7bf2197d2d033406d3b94d57c8c53b2c6b82b33c5698d416f97008ca241b3044"
+    },
+    {
+      "platform": "linux_arm64",
+      "target": "aarch64-unknown-linux-gnu",
+      "path": "internal/clib/linux_arm64/libnono_ffi.a",
+      "sha256": "cbc568366ed829d7f553ac44a191ee8cc66e2e63fe7a92b7e77e9a7153414764"
+    }
+  ],
+  "versions": [
+    {
+      "platform": "darwin_amd64",
+      "target": "x86_64-apple-darwin",
+      "path": "internal/clib/darwin_amd64/VERSION",
+      "commit": "3edf1e18743d43b7a8b828fce97acc3c2b5609dc",
+      "sha256": "df4d6b016109c18963a46f2e0fb212f666eb7df7a504c4fe2a8824d264828087"
+    },
+    {
+      "platform": "darwin_arm64",
+      "target": "aarch64-apple-darwin",
+      "path": "internal/clib/darwin_arm64/VERSION",
+      "commit": "3edf1e18743d43b7a8b828fce97acc3c2b5609dc",
+      "sha256": "b0419774f0161865d7c56e66f17a395ed1dafe638910e86de3d63c7561828414"
+    },
+    {
+      "platform": "linux_amd64",
+      "target": "x86_64-unknown-linux-gnu",
+      "path": "internal/clib/linux_amd64/VERSION",
+      "commit": "3edf1e18743d43b7a8b828fce97acc3c2b5609dc",
+      "sha256": "7d44376438fe7ab930bf96cb64f9fb61b510393ed776a97765f62f4be32bb912"
+    },
+    {
+      "platform": "linux_arm64",
+      "target": "aarch64-unknown-linux-gnu",
+      "path": "internal/clib/linux_arm64/VERSION",
+      "commit": "3edf1e18743d43b7a8b828fce97acc3c2b5609dc",
+      "sha256": "00e8d15766a318a361c5b504a81cab2738a87b01619608fc2eee454f15137fe7"
+    }
+  ]
+}
