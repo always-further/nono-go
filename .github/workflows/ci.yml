@@ -31,6 +31,9 @@ jobs:
       - name: go mod verify
         run: go mod verify
 
+      - name: bundled library manifest
+        run: go run internal/clib/manifest.go
+
   test:
     name: test (${{ matrix.platform }})
     strategy:

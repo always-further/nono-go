@@ -203,6 +203,8 @@ jobs:
           # Update shared header
           cp artifacts/libnono-darwin_arm64/nono.h internal/clib/nono.h
 
+          go run internal/clib/manifest.go -write
+
       - name: Validate updated Go package
         if: steps.check.outputs.skip != 'true'
         env:
