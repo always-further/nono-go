@@ -1,0 +1,69 @@
+---
+title: "Go SDK"
+description: "CGo bindings for applying nono capability sandboxes from Go applications"
+---
+
+`nono-go` provides Go bindings for the nono capability-based security sandbox.
+It lets a Go process declare the filesystem and network access it needs, then
+apply an irreversible kernel-enforced sandbox to itself and its child processes.
+
+The package uses the nono C FFI underneath:
+
+- Linux enforcement uses Landlock.
+- macOS enforcement uses Seatbelt through `sandbox_init`.
+- Static libraries are bundled for macOS and Linux on `amd64` and `arm64`.
+- The public API is available at [pkg.go.dev/github.com/always-further/nono-go](https://pkg.go.dev/github.com/always-further/nono-go).
+
+## Install
+
+```bash
+go get github.com/always-further/nono-go
+```
+
+## Requirements
+
+- Go 1.24 or newer
+- CGo enabled
+- A C toolchain such as `clang` or `gcc`
+
+## Platform support
+
+| OS | Architecture | Bundled library |
+| --- | --- | --- |
+| macOS | `arm64` | Yes |
+| macOS | `amd64` | Yes |
+| Linux | `amd64` | Yes |
+| Linux | `arm64` | Yes |
+
+Unsupported platforms compile to stubs that report `nono.ErrUnsupportedPlatform`.
+
+## Core concepts
+
+`CapabilitySet` builds the policy: allowed paths, access modes, network mode,
+command rules, and optional platform-specific rules.
+
+`Apply` activates the sandbox for the current process. This is irreversible.
+Once applied, the process and its children can only access resources allowed by
+the capability set.
+
+`QueryContext` checks whether a capability set would allow a filesystem or
+network operation without applying the sandbox.
+
+`SandboxState` serializes a capability set to JSON and restores it later.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/go/quickstart">
+    Install the package and apply a minimal sandbox
+  </Card>
+  <Card title="CapabilitySet" icon="shield" href="/go/api/capability-set">
+    Build filesystem and network permissions
+  </Card>
+  <Card title="QueryContext" icon="circle-help" href="/go/api/query-context">
+    Test permissions before applying a sandbox
+  </Card>
+  <Card title="Bundled Libraries" icon="box" href="/go/bundled-libraries">
+    Understand how native FFI artifacts are tracked
+  </Card>
+</CardGroup>

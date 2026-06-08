@@ -1,0 +1,28 @@
+{
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "go/overview",
+          "go/quickstart"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "go/api/capability-set",
+          "go/api/query-context",
+          "go/api/sandbox-state",
+          "go/api/errors"
+        ]
+      },
+      {
+        "group": "Operations",
+        "pages": [
+          "go/bundled-libraries"
+        ]
+      }
+    ]
+  }
+}

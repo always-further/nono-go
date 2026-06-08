@@ -1,0 +1,49 @@
+---
+title: "SandboxState"
+description: "Serialize and restore capability sets as JSON"
+---
+
+`SandboxState` is a JSON-serializable snapshot of a `CapabilitySet`.
+
+Use it when you need to persist a sandbox policy, transmit it between processes,
+or build a capability set from previously stored configuration.
+
+## Create state from capabilities
+
+```go
+state, err := nono.StateFromCaps(caps)
+if err != nil {
+	return err
+}
+defer state.Close()
+```
+
+## Serialize to JSON
+
+```go
+data, err := state.JSON()
+if err != nil {
+	return err
+}
+```
+
+The returned value is a JSON string.
+
+## Restore from JSON
+
+```go
+restored, err := nono.StateFromJSON(data)
+if err != nil {
+	return err
+}
+defer restored.Close()
+
+caps, err := restored.Caps()
+if err != nil {
+	return err
+}
+defer caps.Close()
+```
+
+`SandboxState` is safe for concurrent use. Multiple goroutines may call `JSON`
+concurrently; `Close` requires exclusive access.
