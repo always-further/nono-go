@@ -1,0 +1,210 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to publish, for example v0.57.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  validate-tag:
+    name: validate tag
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.validate.outputs.tag }}
+      version: ${{ steps.validate.outputs.version }}
+      prerelease: ${{ steps.validate.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Validate release tag
+        id: validate
+        run: |
+          set -euo pipefail
+
+          tag="${RELEASE_TAG}"
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::invalid release tag: $tag"
+            exit 1
+          fi
+
+          tag_commit="$(git rev-list -n 1 "$tag")"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "::error::release tag $tag does not point to a commit on origin/main"
+            exit 1
+          fi
+
+          version="${tag#v}"
+          prerelease=false
+          if [[ "$version" =~ -[0-9A-Za-z.-]+$ ]]; then
+            prerelease=true
+          fi
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+  hygiene:
+    name: hygiene
+    needs: validate-tag
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: gofmt
+        run: |
+          files="$(gofmt -l .)"
+          if [ -n "$files" ]; then
+            echo "$files"
+            exit 1
+          fi
+
+      - name: go mod tidy
+        run: go mod tidy -diff
+
+      - name: go mod verify
+        run: go mod verify
+
+      - name: bundled library manifest
+        run: go run internal/clib/manifest.go
+
+  test:
+    name: test (${{ matrix.platform }})
+    needs: validate-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin_arm64
+          - os: macos-15-intel
+            platform: darwin_amd64
+          - os: ubuntu-24.04
+            platform: linux_amd64
+          - os: ubuntu-24.04-arm
+            platform: linux_arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        env:
+          NONO_REQUIRE_APPLY: "1"
+        run: go test -v -count=1 ./...
+
+      - name: go test race
+        env:
+          NONO_SKIP_APPLY_SANDBOX_TEST: "1"
+        run: go test -race -v -count=1 ./...
+
+  lint:
+    name: lint (${{ matrix.platform }})
+    needs: validate-tag
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin_arm64
+          - os: macos-15-intel
+            platform: darwin_amd64
+          - os: ubuntu-24.04
+            platform: linux_amd64
+          - os: ubuntu-24.04-arm
+            platform: linux_arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+
+      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev pkg-config
+
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@2025.1
+
+      - name: staticcheck
+        run: staticcheck ./...
+
+  create-release:
+    name: create GitHub release
+    needs: [validate-tag, hygiene, test, lint]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate-tag.outputs.tag }}
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.validate-tag.outputs.tag }}
+          PRERELEASE: ${{ needs.validate-tag.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "GitHub release $TAG already exists"
+            exit 0
+          fi
+
+          args=(
+            "$TAG"
+            --title "Release $TAG"
+            --generate-notes
+          )
+          if [ "$PRERELEASE" = "true" ]; then
+            args+=(--prerelease)
+          fi
+
+          gh release create "${args[@]}"
