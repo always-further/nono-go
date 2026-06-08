@@ -1,0 +1,59 @@
+---
+title: "QueryContext"
+description: "Check whether a capability set would allow filesystem or network access"
+---
+
+`QueryContext` evaluates permissions against a snapshot of a `CapabilitySet`
+without applying the sandbox.
+
+```go
+qc, err := nono.NewQueryContext(caps)
+if err != nil {
+	return err
+}
+defer qc.Close()
+```
+
+The capability set is cloned when the query context is created. Later changes to
+the original `CapabilitySet` do not affect existing query contexts.
+
+## Query path access
+
+```go
+result, err := qc.QueryPath("/srv/app/data/input.json", nono.AccessRead)
+if err != nil {
+	return err
+}
+
+switch result.Status {
+case nono.QueryAllowed:
+	log.Println("allowed by", result.GrantedPath)
+case nono.QueryDenied:
+	log.Println("denied:", result.Reason.String())
+}
+```
+
+## Query network access
+
+```go
+result, err := qc.QueryNetwork()
+if err != nil {
+	return err
+}
+
+log.Println(result.Status.String(), result.Reason.String())
+```
+
+## Result fields
+
+| Field | Meaning |
+| --- | --- |
+| `Status` | `nono.QueryAllowed` or `nono.QueryDenied` |
+| `Reason` | The reason the operation was allowed or denied |
+| `GrantedPath` | Filesystem capability that granted access, when applicable |
+| `GrantedAccess` | Human-readable access mode for the granting capability |
+| `ActualAccess` | Access mode actually granted in insufficient-access cases |
+| `RequestedAccess` | Access mode requested in insufficient-access cases |
+
+Reasons include `ReasonGrantedPath`, `ReasonNetworkAllowed`,
+`ReasonPathNotGranted`, `ReasonInsufficientAccess`, and `ReasonNetworkBlocked`.

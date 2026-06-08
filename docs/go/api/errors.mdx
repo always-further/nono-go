@@ -1,0 +1,46 @@
+---
+title: "Errors"
+description: "Handle nono-go sentinel errors and detailed FFI error messages"
+---
+
+Failing operations return `*nono.Error`. Use `errors.Is` with the exported
+sentinel errors when you need to branch on the failure kind.
+
+```go
+err := caps.AllowPath("/missing", nono.AccessRead)
+if errors.Is(err, nono.ErrPathNotFound) {
+	log.Println("path does not exist")
+}
+```
+
+Use `errors.As` when you need the numeric code or human-readable message from
+the native library.
+
+```go
+var nonoErr *nono.Error
+if errors.As(err, &nonoErr) {
+	log.Println(nonoErr.Code(), nonoErr.Message())
+}
+```
+
+## Sentinel errors
+
+| Sentinel | Meaning |
+| --- | --- |
+| `nono.ErrPathNotFound` | The path does not exist |
+| `nono.ErrExpectedDirectory` | A directory was required |
+| `nono.ErrExpectedFile` | A file was required |
+| `nono.ErrPathCanonicalization` | Path canonicalization failed |
+| `nono.ErrNoCapabilities` | No capabilities were configured |
+| `nono.ErrSandboxInit` | Platform sandbox initialization failed |
+| `nono.ErrUnsupportedPlatform` | Sandboxing is unavailable on this platform |
+| `nono.ErrBlockedCommand` | A command was blocked by policy |
+| `nono.ErrConfigParse` | Configuration parsing failed |
+| `nono.ErrProfileParse` | Profile parsing failed |
+| `nono.ErrIO` | An I/O operation failed |
+| `nono.ErrInvalidArg` | An invalid argument was passed |
+| `nono.ErrTrustVerification` | Trust verification failed |
+| `nono.ErrUnknown` | Unknown or uncategorized failure |
+
+`nono.Error.Is` matches by error code, so the native message does not need to
+match the sentinel's message.

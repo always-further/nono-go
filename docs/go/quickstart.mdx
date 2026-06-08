@@ -1,0 +1,114 @@
+---
+title: "Go Quickstart"
+description: "Install nono-go and apply a least-privilege sandbox"
+---
+
+## Install
+
+```bash
+go get github.com/always-further/nono-go
+```
+
+## Apply a sandbox
+
+Create a capability set, grant only the paths your process needs, choose a
+network mode, then call `nono.Apply`.
+
+```go
+package main
+
+import (
+	"log"
+
+	nono "github.com/always-further/nono-go"
+)
+
+func main() {
+	caps := nono.New()
+	defer caps.Close()
+
+	if err := caps.AllowPath("./data", nono.AccessRead); err != nil {
+		log.Fatal(err)
+	}
+	if err := caps.AllowPath("/tmp", nono.AccessReadWrite); err != nil {
+		log.Fatal(err)
+	}
+	if err := caps.SetNetworkMode(nono.NetworkBlocked); err != nil {
+		log.Fatal(err)
+	}
+
+	if err := nono.Apply(caps); err != nil {
+		log.Fatal(err)
+	}
+
+	// The current process is now sandboxed.
+}
+```
+
+`Apply` is irreversible. After it succeeds, the current process and all child
+processes are constrained by the capability set.
+
+## Check permissions first
+
+Use `QueryContext` when you want to inspect a policy before applying it.
+
+```go
+qc, err := nono.NewQueryContext(caps)
+if err != nil {
+	log.Fatal(err)
+}
+defer qc.Close()
+
+result, err := qc.QueryPath("./data/input.json", nono.AccessRead)
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(result.Status.String(), result.Reason.String())
+
+network, err := qc.QueryNetwork()
+if err != nil {
+	log.Fatal(err)
+}
+log.Println(network.Status.String(), network.Reason.String())
+```
+
+`QueryContext` snapshots the capability set when it is created. Later changes to
+`caps` do not affect existing query contexts.
+
+## Serialize configuration
+
+Use `SandboxState` to persist or transmit a sandbox policy as JSON.
+
+```go
+state, err := nono.StateFromCaps(caps)
+if err != nil {
+	log.Fatal(err)
+}
+defer state.Close()
+
+data, err := state.JSON()
+if err != nil {
+	log.Fatal(err)
+}
+
+restored, err := nono.StateFromJSON(data)
+if err != nil {
+	log.Fatal(err)
+}
+defer restored.Close()
+
+restoredCaps, err := restored.Caps()
+if err != nil {
+	log.Fatal(err)
+}
+defer restoredCaps.Close()
+```
+
+## Handle platform support
+
+```go
+if !nono.IsSupported() {
+	info := nono.SupportInfo()
+	log.Fatalf("sandboxing unsupported on %s: %s", info.Platform, info.Details)
+}
+```

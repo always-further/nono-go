@@ -1,0 +1,111 @@
+---
+title: "CapabilitySet"
+description: "Build filesystem, network, command, and platform-specific capabilities"
+---
+
+`CapabilitySet` is the policy builder used by `nono.Apply`, `QueryContext`, and
+`SandboxState`.
+
+```go
+caps := nono.New()
+defer caps.Close()
+```
+
+`CapabilitySet` is safe for concurrent use. Call `Close` when you want to free
+native resources immediately; otherwise the Go finalizer releases them later.
+
+## Filesystem access
+
+Grant directory access with `AllowPath`.
+
+```go
+err := caps.AllowPath("/srv/app/data", nono.AccessRead)
+```
+
+Grant single-file access with `AllowFile`.
+
+```go
+err := caps.AllowFile("/srv/app/config.json", nono.AccessRead)
+```
+
+Access modes:
+
+| Constant | Meaning |
+| --- | --- |
+| `nono.AccessRead` | Read access |
+| `nono.AccessWrite` | Write access |
+| `nono.AccessReadWrite` | Read and write access |
+
+Use `PathCovered` to check whether a path is covered by an existing directory
+capability.
+
+```go
+covered, err := caps.PathCovered("/srv/app/data/input.json")
+```
+
+## Network access
+
+Set the outbound network mode with `SetNetworkMode`.
+
+```go
+err := caps.SetNetworkMode(nono.NetworkBlocked)
+```
+
+Network modes:
+
+| Constant | Meaning |
+| --- | --- |
+| `nono.NetworkBlocked` | Block outbound network access |
+| `nono.NetworkAllowAll` | Allow outbound network access |
+| `nono.NetworkProxyOnly` | Allow network access through the configured proxy port |
+
+When using `NetworkProxyOnly`, set the proxy port explicitly.
+
+```go
+if err := caps.SetNetworkMode(nono.NetworkProxyOnly); err != nil {
+	return err
+}
+if err := caps.SetProxyPort(8080); err != nil {
+	return err
+}
+```
+
+## Commands and platform rules
+
+`AllowCommand` and `BlockCommand` add command allow-list and block-list rules.
+
+```go
+if err := caps.AllowCommand("git"); err != nil {
+	return err
+}
+if err := caps.BlockCommand("curl"); err != nil {
+	return err
+}
+```
+
+`AddPlatformRule` adds a raw platform-specific rule. On macOS this is a Seatbelt
+S-expression. On Linux it is ignored.
+
+```go
+err := caps.AddPlatformRule("(allow file-read*)")
+```
+
+## Introspection
+
+Use `Summary` for human-readable diagnostics and `FSCapabilities` for structured
+filesystem capabilities.
+
+```go
+log.Println(caps.Summary())
+
+for _, fs := range caps.FSCapabilities() {
+	log.Println(fs.ResolvedPath, fs.Access, fs.IsFile)
+}
+```
+
+Use `Deduplicate` to collapse redundant filesystem capabilities, keeping the
+highest access level for overlapping paths.
+
+```go
+err := caps.Deduplicate()
+```

@@ -1,0 +1,61 @@
+---
+title: "Bundled Libraries"
+description: "How nono-go tracks bundled native FFI artifacts"
+---
+
+`nono-go` ships static `libnono_ffi.a` libraries for supported macOS and Linux
+targets. This lets consumers install the package without building the Rust core
+library themselves.
+
+## Bundled targets
+
+| Platform directory | Target triple |
+| --- | --- |
+| `internal/clib/darwin_amd64` | `x86_64-apple-darwin` |
+| `internal/clib/darwin_arm64` | `aarch64-apple-darwin` |
+| `internal/clib/linux_amd64` | `x86_64-unknown-linux-gnu` |
+| `internal/clib/linux_arm64` | `aarch64-unknown-linux-gnu` |
+
+Each platform directory includes:
+
+- `libnono_ffi.a`, the static native library
+- `VERSION`, the upstream nono commit used to build that library
+
+The shared C header lives at `internal/clib/nono.h`.
+
+## Provenance manifest
+
+`internal/clib/MANIFEST.json` records the expected SHA-256 digest for the header,
+each static library, and each `VERSION` file.
+
+CI verifies the manifest with:
+
+```bash
+go run internal/clib/manifest.go
+```
+
+After rebuilding bundled libraries locally, regenerate the manifest:
+
+```bash
+make clib-manifest-update
+```
+
+Then run the verifier before opening a pull request:
+
+```bash
+make clib-manifest
+```
+
+## Rebuild libraries
+
+Use `scripts/build-libs.sh` when updating to a newer upstream nono commit.
+
+```bash
+./scripts/build-libs.sh
+```
+
+To build from an existing nono checkout:
+
+```bash
+./scripts/build-libs.sh --nono-src /path/to/nono
+```
