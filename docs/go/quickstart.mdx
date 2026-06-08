@@ -63,13 +63,13 @@ result, err := qc.QueryPath("./data/input.json", nono.AccessRead)
 if err != nil {
 	log.Fatal(err)
 }
-log.Println(result.Status, result.Reason)
+log.Println(result.Status.String(), result.Reason.String())
 
 network, err := qc.QueryNetwork()
 if err != nil {
 	log.Fatal(err)
 }
-log.Println(network.Status, network.Reason)
+log.Println(network.Status.String(), network.Reason.String())
 ```
 
 `QueryContext` snapshots the capability set when it is created. Later changes to

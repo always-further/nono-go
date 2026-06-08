@@ -29,7 +29,7 @@ switch result.Status {
 case nono.QueryAllowed:
 	log.Println("allowed by", result.GrantedPath)
 case nono.QueryDenied:
-	log.Println("denied:", result.Reason)
+	log.Println("denied:", result.Reason.String())
 }
 ```
 
@@ -41,7 +41,7 @@ if err != nil {
 	return err
 }
 
-log.Println(result.Status, result.Reason)
+log.Println(result.Status.String(), result.Reason.String())
 ```
 
 ## Result fields

@@ -75,8 +75,12 @@ if err := caps.SetProxyPort(8080); err != nil {
 `AllowCommand` and `BlockCommand` add command allow-list and block-list rules.
 
 ```go
-_ = caps.AllowCommand("git")
-_ = caps.BlockCommand("curl")
+if err := caps.AllowCommand("git"); err != nil {
+	return err
+}
+if err := caps.BlockCommand("curl"); err != nil {
+	return err
+}
 ```
 
 `AddPlatformRule` adds a raw platform-specific rule. On macOS this is a Seatbelt
