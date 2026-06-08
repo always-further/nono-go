@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(git rev-parse --show-toplevel)"
+
 usage() {
   cat <<'EOF'
 Usage: scripts/release.sh [--dry-run] [--skip-checks] vX.Y.Z
@@ -54,7 +56,7 @@ if [ -z "$tag" ]; then
   exit 2
 fi
 
-if ! echo "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
   echo "invalid release tag: $tag" >&2
   echo "expected vX.Y.Z, optionally with a prerelease suffix" >&2
   exit 1
@@ -71,7 +73,7 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-git fetch origin main --tags
+git fetch origin --tags main:refs/remotes/origin/main
 
 head="$(git rev-parse HEAD)"
 origin_main="$(git rev-parse origin/main)"

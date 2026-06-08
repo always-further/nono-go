@@ -41,13 +41,13 @@ jobs:
           set -euo pipefail
 
           tag="${RELEASE_TAG}"
-          if ! echo "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::invalid release tag: $tag"
             exit 1
           fi
 
           tag_commit="$(git rev-list -n 1 "$tag")"
-          git fetch --no-tags origin main
+          git fetch --no-tags origin main:refs/remotes/origin/main
           if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
             echo "::error::release tag $tag does not point to a commit on origin/main"
             exit 1
@@ -55,7 +55,7 @@ jobs:
 
           version="${tag#v}"
           prerelease=false
-          if echo "$version" | grep -Eq '-[0-9A-Za-z.-]+$'; then
+          if [[ "$version" =~ -[0-9A-Za-z.-]+$ ]]; then
             prerelease=true
           fi
 
