@@ -9,25 +9,25 @@
       "platform": "darwin_amd64",
       "target": "x86_64-apple-darwin",
       "path": "internal/clib/darwin_amd64/libnono_ffi.a",
-      "sha256": "fc5f846b8d338b44c9f92e34580be1a12404b90a2f00b38502957ea4be02c537"
+      "sha256": "0515abab33f97d77d3cc29d6f50d93b86a9bc0ccd57e6964933f0b64eb145f7f"
     },
     {
       "platform": "darwin_arm64",
       "target": "aarch64-apple-darwin",
       "path": "internal/clib/darwin_arm64/libnono_ffi.a",
-      "sha256": "584a0def833dfa35a36fd29d7b5d15a284ae76e48ec1da0fccd1858f2e2c076c"
+      "sha256": "098d02008b68dc76bcb476e3d60da1652a7cae3f4083f9cc1fd6519143addcdc"
     },
     {
       "platform": "linux_amd64",
       "target": "x86_64-unknown-linux-gnu",
       "path": "internal/clib/linux_amd64/libnono_ffi.a",
-      "sha256": "4163169cf1bd672319e4d767eb737f60c647457e110792a0cd35fa62a6c5b3c1"
+      "sha256": "855f39d82a9996ecd5b8e9b5ebcc977e0f58ac8cb8052f03c8b815f8855b58d1"
     },
     {
       "platform": "linux_arm64",
       "target": "aarch64-unknown-linux-gnu",
       "path": "internal/clib/linux_arm64/libnono_ffi.a",
-      "sha256": "c252aa79bdeff630fb5d3eafef5ddcd12e81fdd4ad0b13cb9877f46d5856d0a6"
+      "sha256": "22cbec53a8813a2926a983b7394b27fa3b5be803098b99802a9f56a5920b5fe3"
     }
   ],
   "versions": [
@@ -35,29 +35,29 @@
       "platform": "darwin_amd64",
       "target": "x86_64-apple-darwin",
       "path": "internal/clib/darwin_amd64/VERSION",
-      "commit": "52809dda3b9ec5d7a237c26ac5e90840052993d9",
-      "sha256": "34eddeb706ac88d831c6fc93b229026809a0848f149c7617ed28c98cfa238f8e"
+      "commit": "084638b76cde4a19304147b14fa8cfc591881981",
+      "sha256": "bae32558bfb1579f117fc0547ef0233542780c162356f492289907be47a7cd90"
     },
     {
       "platform": "darwin_arm64",
       "target": "aarch64-apple-darwin",
       "path": "internal/clib/darwin_arm64/VERSION",
-      "commit": "52809dda3b9ec5d7a237c26ac5e90840052993d9",
-      "sha256": "2c2b624130ca644b27c9aea99f7a9b3f4d7be87e72a4e05974f2698d8c2aabdb"
+      "commit": "084638b76cde4a19304147b14fa8cfc591881981",
+      "sha256": "a44a3d74a996de551e51bb12b6a1e47188594fdafe29b08ba8ee974ea8553bde"
     },
     {
       "platform": "linux_amd64",
       "target": "x86_64-unknown-linux-gnu",
       "path": "internal/clib/linux_amd64/VERSION",
-      "commit": "52809dda3b9ec5d7a237c26ac5e90840052993d9",
-      "sha256": "e14131e01a8b5f5e65182647d0be2436b89b9c401c4578797b0bd53fd5ab0ca2"
+      "commit": "084638b76cde4a19304147b14fa8cfc591881981",
+      "sha256": "3e85f8ca970e89313c2d4c5c6f14b4cdf65238019277010f906eb72de2376f22"
     },
     {
       "platform": "linux_arm64",
       "target": "aarch64-unknown-linux-gnu",
       "path": "internal/clib/linux_arm64/VERSION",
-      "commit": "52809dda3b9ec5d7a237c26ac5e90840052993d9",
-      "sha256": "8b3f6daffbc602920a4c9e87516e69d345756381b005a9c0d14df11e6b8427a5"
+      "commit": "084638b76cde4a19304147b14fa8cfc591881981",
+      "sha256": "6634260a9f8fba019816003243f3cf8b3d71552d584d89a486b0390c713a88c6"
     }
   ]
 }
