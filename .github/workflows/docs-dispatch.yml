@@ -14,6 +14,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.DOCS_PAT }}
-          repository: always-further/nono-docs
+          repository: nolabs-ai/nono-docs
           event-type: docs-update
           client-payload: '{"repo": "${{ github.repository }}", "sha": "${{ github.sha }}"}'

@@ -21,7 +21,7 @@ if [[ -z "$NONO_SRC" ]]; then
     NONO_SRC="$(mktemp -d)"
     trap 'rm -rf "$NONO_SRC"' EXIT
     echo "Cloning nono repository..."
-    git clone --depth=1 https://github.com/always-further/nono.git "$NONO_SRC"
+    git clone --depth=1 https://github.com/nolabs-ai/nono.git "$NONO_SRC"
 fi
 
 is_linux_target() {

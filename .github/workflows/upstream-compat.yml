@@ -50,7 +50,7 @@ jobs:
       - name: Clone nono HEAD
         id: nono-rev
         run: |
-          git clone --depth=1 https://github.com/always-further/nono.git /tmp/nono-src
+          git clone --depth=1 https://github.com/nolabs-ai/nono.git /tmp/nono-src
           sha="$(git -C /tmp/nono-src rev-parse HEAD)"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
 

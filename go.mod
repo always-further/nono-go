@@ -1,3 +1,3 @@
-module github.com/always-further/nono-go
+module github.com/nolabs-ai/nono-go
 
 go 1.24
