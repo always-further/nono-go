@@ -42,7 +42,7 @@ If validation passes, it creates the GitHub Release. Go users can then install
 the release with:
 
 ```bash
-go get github.com/always-further/nono-go@v0.57.0
+go get github.com/nolabs-ai/nono-go@v0.57.0
 ```
 
 The Go proxy and pkg.go.dev discover the version from the Git tag when the

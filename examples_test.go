@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 func ExampleQueryContext() {

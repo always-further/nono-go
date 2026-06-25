@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/always-further/nono-go"
+	"github.com/nolabs-ai/nono-go"
 )
 
 // newCapSet returns a new CapabilitySet that is closed at test end.

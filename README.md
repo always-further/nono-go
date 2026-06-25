@@ -1,9 +1,9 @@
 # nono-go
 
-[![CI](https://github.com/always-further/nono-go/actions/workflows/ci.yml/badge.svg)](https://github.com/always-further/nono-go/actions/workflows/ci.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/always-further/nono-go.svg)](https://pkg.go.dev/github.com/always-further/nono-go)
+[![CI](https://github.com/nolabs-ai/nono-go/actions/workflows/ci.yml/badge.svg)](https://github.com/nolabs-ai/nono-go/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/nolabs-ai/nono-go.svg)](https://pkg.go.dev/github.com/nolabs-ai/nono-go)
 
-Go CGo bindings for the [nono](https://github.com/always-further/nono) capability-based security sandbox.
+Go CGo bindings for the [nono](https://github.com/nolabs-ai/nono) capability-based security sandbox.
 
 nono applies an irreversible, least-privilege sandbox to the current process using Linux Landlock (Linux) or Seatbelt/`sandbox_init` (macOS). You declare the paths and network modes the process needs; nono enforces them at the kernel level.
 
@@ -26,12 +26,12 @@ All platforms work out of the box. The static libraries for all four targets are
 ## Installation
 
 ```
-go get github.com/always-further/nono-go
+go get github.com/nolabs-ai/nono-go
 ```
 
 ## Building native libraries
 
-The bundled libraries are built from the upstream [nono](https://github.com/always-further/nono) repository using `scripts/build-libs.sh`. Run this script when you want to update the bundled libraries to a newer nono upstream commit.
+The bundled libraries are built from the upstream [nono](https://github.com/nolabs-ai/nono) repository using `scripts/build-libs.sh`. Run this script when you want to update the bundled libraries to a newer nono upstream commit.
 
 **Requirements:** `cargo` (for Apple targets), Docker (for Linux targets — uses `rust:latest` via emulation)
 
